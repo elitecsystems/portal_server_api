@@ -1,71 +1,125 @@
+/* Lenguaje visual compartido con el escritorio y el portal de facturación:
+   paleta verde azulado + terracota, botones de píldora, tarjetas con borde fino
+   y la huella de anillos concéntricos de la marca. Las clases son las de siempre;
+   aquí solo cambia cómo se ven. */
 :root {
-  --fondo: #f4f6f9;
-  --tarjeta: #ffffff;
-  --texto: #1b2430;
-  --suave: #5d6b7c;
-  --borde: #d9e0e8;
-  --marca: #0b4f8a;
-  --marca-osc: #083b69;
-  --error-bg: #fdecec;
-  --error: #9b1c1c;
-  --exito-bg: #e8f6ee;
-  --exito: #17603a;
-  --ambar-bg: #fff4dc;
-  --ambar: #8a5a00;
-  --radio: 10px;
+  --fondo: #FAFAFA;
+  --tarjeta: #FFFFFF;
+  --texto: #1A1A1A;
+  --suave: #6B6B6B;
+  --borde: #E0E0E0;
+  --marca: #2F5D62;
+  --marca-osc: #26494D;
+  --marca-suave: #E8EFEF;
+  --sec: #A85C42;
+  --sec-suave: #F3E4DE;
+  --sec-texto: #7A4530;
+  --error-bg: #FBE4E4;
+  --error: #C62828;
+  --exito-bg: #E3F2E4;
+  --exito: #2E7D32;
+  --ambar-bg: #FBEEDD;
+  --ambar: #B36B00;
+  --radio: 12px;
+  --radio-chico: 8px;
+  --degradado: linear-gradient(160deg, #FAFAFA 0%, #F2EEEA 50%, #ECE4DF 100%);
+  --anillo: rgba(47, 93, 98, 0.15);
+  --vidrio: rgba(255, 255, 255, 0.72);
+  --vidrio-borde: rgba(255, 255, 255, 0.6);
+  --logo-filtro: none;
+  --fuente: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --fondo: #10161d;
-    --tarjeta: #18212b;
-    --texto: #e7edf3;
-    --suave: #9aa8b8;
-    --borde: #2a3644;
-    --marca: #5aa9f0;
-    --marca-osc: #7dbcf5;
-    --error-bg: #3a1a1a;
-    --error: #ffb4b4;
-    --exito-bg: #14301f;
-    --exito: #8fe0b0;
-    --ambar-bg: #3a2c0c;
-    --ambar: #f5cf7a;
+    --fondo: #12181A;
+    --tarjeta: #1A2325;
+    --texto: #E8EEEE;
+    --suave: #9DAAAB;
+    --borde: #2B3739;
+    --marca: #6FB3B9;
+    --marca-osc: #8CC6CB;
+    --marca-suave: #1F3033;
+    --sec: #D58A6E;
+    --sec-suave: #3A2620;
+    --sec-texto: #EBB7A3;
+    --error-bg: #3A1D1D;
+    --error: #FF9E9E;
+    --exito-bg: #1B3320;
+    --exito: #8FD39A;
+    --ambar-bg: #3A2C12;
+    --ambar: #F0C879;
+    --degradado: linear-gradient(160deg, #12181A 0%, #141C1E 50%, #182224 100%);
+    --anillo: rgba(111, 179, 185, 0.16);
+    --vidrio: rgba(26, 35, 37, 0.72);
+    --vidrio-borde: rgba(255, 255, 255, 0.08);
+    --logo-filtro: invert(1);
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0;
   background: var(--fondo);
   color: var(--texto);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.5 var(--fuente);
 }
 a { color: var(--marca); }
-h1 { font-size: 1.5rem; margin: 0 0 1rem; }
-h2 { font-size: 1.15rem; margin: 0 0 .75rem; }
+h1 { font-size: 1.4rem; font-weight: 600; margin: 0 0 1rem; }
+h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 .75rem; }
 .suave { color: var(--suave); }
 small.suave { font-size: .8rem; }
 
-/* estructura */
+/* estructura: barra superior limpia, con el logo y el menú en píldoras */
 .barra { background: var(--tarjeta); border-bottom: 1px solid var(--borde); }
-.barra-interior { max-width: 960px; margin: 0 auto; padding: .6rem 16px; display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; align-items: center; }
-.marca { font-weight: 700; color: var(--marca); text-decoration: none; margin-right: auto; }
-.barra nav { display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
-.barra nav a { text-decoration: none; color: var(--suave); padding: .25rem 0; border-bottom: 2px solid transparent; }
-.barra nav a.activo { color: var(--texto); border-color: var(--marca); }
+.barra-interior { max-width: 960px; margin: 0 auto; padding: .6rem 16px; display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
+.marca { display: inline-flex; align-items: center; margin-right: auto; text-decoration: none; color: var(--marca); font-weight: 700; }
+.logo { display: block; height: 30px; width: auto; filter: var(--logo-filtro); }
+.barra nav { display: flex; flex-wrap: wrap; gap: .25rem; }
+.barra nav a { text-decoration: none; color: var(--texto); padding: 6px 14px; border-radius: var(--radio-chico); transition: background .15s ease, color .15s ease; }
+.barra nav a:hover { background: var(--marca-suave); }
+.barra nav a.activo { background: var(--marca-suave); color: var(--marca); font-weight: 600; }
 main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
-.centro { max-width: 420px; margin: 8vh auto 0; padding: 0 16px; }
 .tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: var(--radio); padding: 20px; margin-bottom: 16px; }
 .fila { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.fila > h1 { margin: 0; }
 .rejilla { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .vacio { color: var(--suave); text-align: center; padding: 24px 0; }
 
+/* tarjetas que son enlace: borde más marcado y sombra desplazada al pasar el cursor */
+a > article.tarjeta { border-width: 1.5px; transition: transform .1s ease, box-shadow .1s ease; height: 100%; }
+a > article.tarjeta:hover { transform: translateY(-2px); box-shadow: 3px 3px 0 var(--borde); border-color: var(--marca); }
+a > article.tarjeta h2 { color: var(--texto); }
+
+/* pantallas públicas (entrar, invitación, enlaces de correo): tarjeta de vidrio
+   sobre degradado cálido y anillos, igual que el login del escritorio */
+.pantalla-publica { min-height: 100vh; position: relative; overflow: hidden; background: var(--degradado); padding: 8vh 16px 40px; }
+.decoracion { position: fixed; border-radius: 50%; border: 2px solid var(--anillo); pointer-events: none; }
+.decoracion--1 { top: -120px; right: -100px; width: 420px; height: 420px; }
+.decoracion--2 { top: -60px; right: -40px; width: 300px; height: 300px; opacity: .8; }
+.decoracion--3 { top: -10px; right: 10px; width: 190px; height: 190px; opacity: 1.2; }
+.centro { position: relative; z-index: 1; max-width: 420px; margin: 0 auto; }
+.centro .logo-grande { display: block; width: 200px; max-width: 80%; height: auto; margin: 0 auto 20px; filter: var(--logo-filtro); }
+.centro > .tarjeta {
+  background: var(--vidrio);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .2), 0 2px 8px rgba(0, 0, 0, .1);
+  padding: 32px;
+}
+.centro h1 { font-size: 1.25rem; }
+.pie-publico { position: relative; z-index: 1; text-align: center; color: var(--suave); font-size: .78rem; margin-top: 20px; }
+
 /* formularios */
 .campo { display: block; margin-bottom: 14px; }
-.campo > span { display: block; font-size: .9rem; margin-bottom: 4px; font-weight: 500; }
+.campo > span { display: block; font-size: 13px; margin-bottom: 6px; color: var(--suave); }
 input, select, textarea {
-  width: 100%; font: inherit; color: inherit; background: var(--fondo);
-  border: 1px solid var(--borde); border-radius: 8px; padding: 9px 11px;
+  width: 100%; font: inherit; color: var(--texto); background: var(--tarjeta);
+  border: 1px solid var(--borde); border-radius: var(--radio-chico); padding: 8px 12px;
 }
 textarea { min-height: 110px; resize: vertical; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--marca); box-shadow: 0 0 3px var(--marca-suave); }
 input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
   outline: 2px solid var(--marca); outline-offset: 2px;
 }
@@ -73,23 +127,26 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .check { display: flex; gap: 8px; align-items: center; }
 .check input { width: auto; }
 button, .boton {
-  font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block;
-  background: var(--marca); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px;
+  font: inherit; cursor: pointer; text-decoration: none; display: inline-block; text-align: center;
+  background: var(--marca); color: var(--tarjeta); border: 1px solid transparent; border-radius: 999px; padding: 8px 18px;
+  transition: background .15s ease, border-color .15s ease;
 }
 button:hover:not(:disabled), .boton:hover { background: var(--marca-osc); }
 button:disabled { opacity: .6; cursor: default; }
-button.secundario, .boton.secundario { background: transparent; color: var(--marca); border: 1px solid var(--borde); }
-button.enlace { background: none; color: var(--marca); padding: 0; font-weight: 500; text-decoration: underline; }
+button.secundario, .boton.secundario { background: transparent; color: var(--texto); border-color: var(--borde); }
+button.secundario:hover:not(:disabled), .boton.secundario:hover { background: transparent; border-color: var(--suave); }
+button.enlace { background: none; color: var(--marca); padding: 0; border: 0; border-radius: 0; text-decoration: underline; }
+button.enlace:hover:not(:disabled) { background: none; color: var(--marca-osc); }
 .acciones { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
 
 /* avisos e insignias */
-.aviso { border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
-.aviso.error { background: var(--error-bg); color: var(--error); }
-.aviso.exito { background: var(--exito-bg); color: var(--exito); }
-.aviso.ambar { background: var(--ambar-bg); color: var(--ambar); }
-.insignia { display: inline-block; font-size: .78rem; font-weight: 600; border-radius: 99px; padding: 2px 10px; }
+.aviso { border-radius: var(--radio-chico); padding: 10px 14px; margin-bottom: 14px; font-size: .92rem; border: 1px solid transparent; }
+.aviso.error { background: var(--error-bg); color: var(--error); border-color: color-mix(in srgb, var(--error) 30%, transparent); }
+.aviso.exito { background: var(--exito-bg); color: var(--exito); border-color: color-mix(in srgb, var(--exito) 35%, transparent); }
+.aviso.ambar { background: var(--ambar-bg); color: var(--ambar); border-color: color-mix(in srgb, var(--ambar) 30%, transparent); }
+.insignia { display: inline-block; font-size: .78rem; font-weight: 600; border-radius: 999px; padding: 2px 10px; }
 .insignia.gris { background: var(--borde); color: var(--suave); }
-.insignia.azul { background: #dbeafe; color: #1e40af; }
+.insignia.azul { background: var(--marca-suave); color: var(--marca); }
 .insignia.verde { background: var(--exito-bg); color: var(--exito); }
 .insignia.rojo { background: var(--error-bg); color: var(--error); }
 .insignia.ambar { background: var(--ambar-bg); color: var(--ambar); }
@@ -101,38 +158,40 @@ dl.datos dd { margin: 0; overflow-wrap: anywhere; }
 table.tabla { width: 100%; border-collapse: collapse; }
 table.tabla th, table.tabla td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--borde); vertical-align: top; }
 table.tabla th { font-size: .8rem; color: var(--suave); font-weight: 600; }
+table.tabla tbody tr:hover { background: var(--marca-suave); }
 .num { text-align: right !important; font-variant-numeric: tabular-nums; }
 .tabla-scroll { overflow-x: auto; }
 .codigos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; font-family: ui-monospace, Consolas, monospace; margin: 12px 0; }
 .codigos code { background: var(--fondo); border: 1px solid var(--borde); border-radius: 6px; padding: 4px 8px; }
-.qr { display: block; margin: 12px auto; background: #fff; padding: 8px; border-radius: 8px; max-width: 100%; }
+.qr { display: block; margin: 12px auto; background: #fff; padding: 8px; border-radius: var(--radio-chico); max-width: 100%; }
 
 /* modal */
 .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: grid; place-items: center; padding: 16px; z-index: 10; }
-.modal { width: 100%; max-width: 420px; margin: 0; }
+.modal { width: 100%; max-width: 420px; margin: 0; box-shadow: 0 24px 60px rgba(0, 0, 0, .28); }
 
 @media (max-width: 520px) {
   dl.datos { grid-template-columns: 1fr; }
   dl.datos dt { margin-top: 6px; }
+  .centro > .tarjeta { padding: 24px 20px; }
 }
 
 /* ayuda al pasar el cursor */
 .info { position: relative; display: inline-flex; margin-left: 6px; vertical-align: middle; outline: none; }
 .info-icono {
   display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%;
-  background: var(--borde); color: var(--suave); font-size: .72rem; font-weight: 700; cursor: help;
+  background: var(--marca-suave); color: var(--marca); font-size: .72rem; font-weight: 700; cursor: help;
 }
 .info:focus-visible .info-icono { outline: 2px solid var(--marca); outline-offset: 2px; }
 .info-texto {
   display: none; position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
-  width: max-content; max-width: min(280px, 80vw); padding: 8px 10px; border-radius: 8px;
+  width: max-content; max-width: min(280px, 80vw); padding: 8px 10px; border-radius: var(--radio-chico);
   background: var(--texto); color: var(--tarjeta); font-size: .8rem; font-weight: 400; line-height: 1.35; z-index: 5;
   box-shadow: 0 4px 14px rgba(0,0,0,.25);
 }
 .info:hover .info-texto, .info:focus .info-texto, .info:focus-within .info-texto { display: block; }
 
 /* mapa del pin */
-.mapa { height: 320px; border-radius: 8px; border: 1px solid var(--borde); margin-bottom: 8px; z-index: 0; }
+.mapa { height: 320px; border-radius: var(--radio-chico); border: 1px solid var(--borde); margin-bottom: 8px; z-index: 0; }
 .leaflet-container { font: inherit; }
 .paso { margin-bottom: 20px; }
 .paso > h2 { display: flex; align-items: center; gap: 8px; }

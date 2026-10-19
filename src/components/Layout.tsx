@@ -7,8 +7,8 @@ export function Layout() {
     <>
       <header className="barra">
         <div className="barra-interior">
-          <NavLink to="/" className="marca">
-            Elitec Systems
+          <NavLink to="/" className="marca" aria-label="Elitec Systems, inicio">
+            <img className="logo" src="/elitec.png" alt="Elitec Systems" />
           </NavLink>
           {/* Sin 2FA solo existe la pantalla de seguridad: el menu no lleva a ninguna parte. */}
           {dosFA && (
@@ -32,12 +32,18 @@ export function Layout() {
 
 export function Publico({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <div className="centro">
-      <p className="marca" style={{ marginBottom: 16 }}>Elitec Systems · Portal de clientes</p>
-      <div className="tarjeta">
-        <h1>{titulo}</h1>
-        {children}
+    <div className="pantalla-publica">
+      <span className="decoracion decoracion--1" aria-hidden="true" />
+      <span className="decoracion decoracion--2" aria-hidden="true" />
+      <span className="decoracion decoracion--3" aria-hidden="true" />
+      <div className="centro">
+        <img className="logo-grande" src="/elitec.png" alt="Elitec Systems" />
+        <div className="tarjeta">
+          <h1>{titulo}</h1>
+          {children}
+        </div>
       </div>
+      <p className="pie-publico">Portal de clientes · Elitec Systems</p>
     </div>
   );
 }

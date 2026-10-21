@@ -1,7 +1,7 @@
 // Cliente HTTP del portal. La sesion es una cookie HttpOnly: el front no ve ni
 // guarda ningun token. Todo va a /portal/* en el mismo origen.
 
-export type Requiere = "configurar_2fa" | "reautenticar" | "regularizar_saldo" | "verificar_correo" | "completar_perfil";
+export type Requiere = "configurar_2fa" | "reautenticar" | "regularizar_saldo" | "verificar_correo" | "completar_perfil" | "datos_fiscales";
 
 export class ApiError extends Error {
   status: number;
@@ -139,6 +139,9 @@ export type Pedido = {
   estado: string;
   created_at: string;
 };
+// Solicitud de factura de un servicio: se pide desde el pedido (reemplaza al
+// formulario publico de facturacion). `emitida` = la empresa ya la emitio.
+export type FacturaServicio = { solicitada_en: string; uso_cfdi: string | null; emitida: boolean };
 export type ServicioPedido = {
   numero_orden: number;
   tipo_servicio_nombre: string;
@@ -148,6 +151,7 @@ export type ServicioPedido = {
   monto_total: string;
   monto_pagado: string;
   saldo: string;
+  factura: FacturaServicio | null;
 };
 export type PedidoDetalle = Pedido & { servicios: ServicioPedido[] };
 export type Saldo = {

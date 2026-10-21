@@ -1,7 +1,11 @@
+import { useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { api, type Pedido, type PedidoDetalle } from "../api";
+import {
+  api, ApiError, textoError,
+  type CatalogosFiscales, type Condominio, type DatosFiscales, type FacturaServicio, type Pedido, type PedidoDetalle, type ServicioPedido,
+} from "../api";
 import { dinero, ESTADO_PAGO, ESTADO_PEDIDO, fecha, fechaHora } from "../format";
-import { Cargando, Insignia, Vacio, useCarga } from "../components/ui";
+import { Campo, Cargando, Errores, Insignia, Vacio, useCarga } from "../components/ui";
 
 const tono = (e: string) =>
   e === "cerrado" ? "verde" : e === "cancelado" ? "gris" : e === "creado" ? "ambar" : "azul";
@@ -31,7 +35,7 @@ export function ListaPedidos() {
 
 export function DetallePedido() {
   const numero = useParams().numero!;
-  const { datos: p, error, cargando } = useCarga(() => api.get<PedidoDetalle>(`/pedidos/${numero}`), [numero]);
+  const { datos: p, error, cargando, recargar } = useCarga(() => api.get<PedidoDetalle>(`/pedidos/${numero}`), [numero]);
   return (
     <>
       <p><Link to="/pedidos">← Mis pedidos</Link></p>
@@ -85,8 +89,100 @@ export function DetallePedido() {
               </div>
             </section>
           )}
+          {p.servicios.length > 0 && <FacturaCard p={p} alCambiar={recargar} />}
         </>
       )}
     </>
+  );
+}
+
+/** La factura se pide desde aqui, servicio por servicio (reemplaza al formulario publico
+ *  de facturacion). No se le dice al cliente si "corresponde" facturar: eso lo decide la
+ *  empresa (decisiones/0070); lo unico que se exige son los datos fiscales del condominio. */
+function FacturaCard({ p, alCambiar }: { p: PedidoDetalle; alCambiar: () => void }) {
+  const condominio = useCarga(() => api.get<Condominio>(`/condominios/${p.condominio_id}`), [p.condominio_id]);
+  const tieneFiscales = condominio.datos?.tiene_datos_fiscales;
+  const catalogos = useCarga(() => api.get<CatalogosFiscales>("/catalogos-fiscales"), []);
+  const fiscales = useCarga(
+    () => (tieneFiscales ? api.get<DatosFiscales>(`/condominios/${p.condominio_id}/datos-fiscales`) : Promise.resolve(null)),
+    [p.condominio_id, tieneFiscales],
+  );
+  const [abierto, setAbierto] = useState<number | null>(null);
+  const [uso, setUso] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [faltanFiscales, setFaltanFiscales] = useState(false);
+
+  const abrir = (s: ServicioPedido) => {
+    setAbierto(s.numero_orden);
+    setUso(fiscales.datos?.uso_cfdi ?? "");
+    setErr(null);
+  };
+
+  const pedir = async (ev: FormEvent, s: ServicioPedido) => {
+    ev.preventDefault();
+    setErr(null);
+    setEnviando(true);
+    try {
+      await api.post<FacturaServicio>(`/pedidos/${p.numero_pedido}/servicios/${s.numero_orden}/factura`, { uso_cfdi: uso });
+      setAbierto(null);
+      alCambiar();
+    } catch (e) {
+      setFaltanFiscales(e instanceof ApiError && e.requiere === "datos_fiscales");
+      setErr(textoError(e));
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const sinFiscales = tieneFiscales === false || faltanFiscales;
+  const enlaceFiscales = <Link to={`/condominios/${p.condominio_id}`}>Capturar datos fiscales</Link>;
+
+  return (
+    <section className="tarjeta">
+      <h2>Factura</h2>
+      <p className="suave" style={{ marginTop: 0 }}>Pide aquí la factura de cada servicio. Usaremos los datos fiscales de tu condominio.</p>
+      <Cargando error={condominio.error} cargando={condominio.cargando} />
+      {sinFiscales && <div className="aviso ambar">Tu condominio todavía no tiene datos fiscales. {enlaceFiscales} para poder pedir la factura.</div>}
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {p.servicios.map((s) => (
+          <li key={s.numero_orden} style={{ padding: "8px 0", borderTop: "1px solid var(--borde)" }}>
+            <div className="fila">
+              <span>{s.tipo_servicio_nombre} <span className="suave">· {fecha(s.cerrado_at)}</span></span>
+              {s.factura ? (
+                s.factura.emitida
+                  ? <Insignia tono="verde">Factura emitida</Insignia>
+                  : <Insignia tono="azul">Factura solicitada el {fecha(s.factura.solicitada_en)}</Insignia>
+              ) : abierto === s.numero_orden ? null : (
+                <button className="secundario" onClick={() => abrir(s)} disabled={tieneFiscales === undefined || sinFiscales}>
+                  Pedir factura
+                </button>
+              )}
+            </div>
+            {!s.factura && abierto === s.numero_orden && (
+              <form onSubmit={(ev) => pedir(ev, s)}>
+                <Errores mensaje={err} />
+                {catalogos.error && <Errores mensaje={`No se pudo cargar la lista de usos de CFDI. ${catalogos.error}`} />}
+                {!catalogos.error && !catalogos.datos && <p className="suave">Cargando…</p>}
+                {catalogos.datos && (
+                  <Campo etiqueta="Uso de CFDI" ayuda="Para qué vas a usar la factura. Es del comprobante, y puede ser distinto en cada servicio.">
+                    <select value={uso} onChange={(e) => setUso(e.target.value)} required>
+                      <option value="">Elige…</option>
+                      {catalogos.datos.usos_cfdi.map((i) => (
+                        <option key={i.codigo} value={i.codigo}>{i.codigo} — {i.nombre}</option>
+                      ))}
+                    </select>
+                  </Campo>
+                )}
+                <div className="acciones">
+                  <button type="button" className="secundario" onClick={() => setAbierto(null)}>Cancelar</button>
+                  <button disabled={enviando || !uso}>{enviando ? "Enviando…" : "Pedir factura"}</button>
+                </div>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

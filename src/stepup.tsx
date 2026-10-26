@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, textoError } from "./api";
-import { Campo, Errores } from "./components/ui";
+import { Campo, CampoOtp, Errores } from "./components/ui";
 
 // Acciones sensibles: la API contesta 403 con `requiere`. Aqui se decide a que
 // pantalla mandar al usuario y se reintenta la accion despues.
@@ -62,11 +62,13 @@ export function StepUpProvider({ children }: { children: ReactNode }) {
 function ModalReautenticar({ onListo, onCancelar }: { onListo: () => void; onCancelar: () => void }) {
   const [password, setPassword] = useState("");
   const [codigo, setCodigo] = useState("");
+  const [recuperacion, setRecuperacion] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   const enviar = async (ev: FormEvent) => {
     ev.preventDefault();
+    if (!recuperacion && codigo.length !== 6) return setError("Escribe los 6 dígitos del código OTP.");
     setEnviando(true);
     setError(null);
     try {
@@ -87,15 +89,24 @@ function ModalReautenticar({ onListo, onCancelar }: { onListo: () => void; onCan
       <form className="modal tarjeta" onSubmit={enviar}>
         <h2 id="titulo-reauth">Confirma tu identidad</h2>
         <p className="suave">
-          Para esta acción pedimos tu contraseña y un código de tu aplicación de verificación. Vale 5 minutos.
+          Para esta acción pedimos tu contraseña y un código OTP (el de 6 dígitos de tu aplicación de verificación). Vale 5 minutos.
         </p>
         <Errores mensaje={error} />
         <Campo etiqueta="Contraseña">
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
         </Campo>
-        <Campo etiqueta="Código de 6 dígitos o de recuperación">
-          <input autoComplete="one-time-code" value={codigo} onChange={(e) => setCodigo(e.target.value)} required minLength={6} maxLength={20} />
-        </Campo>
+        {recuperacion ? (
+          <Campo etiqueta="Código de recuperación">
+            <input value={codigo} onChange={(e) => setCodigo(e.target.value)} required minLength={6} maxLength={20} autoComplete="off" />
+          </Campo>
+        ) : (
+          <CampoOtp etiqueta="Código OTP de 6 dígitos (de tu aplicación de verificación)" valor={codigo} onChange={setCodigo} />
+        )}
+        <p>
+          <button type="button" className="enlace" onClick={() => { setRecuperacion(!recuperacion); setCodigo(""); }}>
+            {recuperacion ? "Usar el código OTP de mi aplicación" : "Usar un código de recuperación"}
+          </button>
+        </p>
         <div className="acciones">
           <button type="button" className="secundario" onClick={onCancelar}>
             Cancelar

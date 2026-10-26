@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { textoError } from "../api";
 
 export function Errores({ mensaje }: { mensaje: string | null }) {
@@ -38,6 +38,65 @@ export function Campo({ etiqueta, ayuda, info, children }: { etiqueta: string; a
       {children}
       {ayuda && <small className="suave">{ayuda}</small>}
     </label>
+  );
+}
+
+/** Código OTP de 6 dígitos, una casilla por dígito: al escribir salta a la siguiente,
+ *  Retroceso vuelve a la anterior y pegar el código completo lo reparte solo. */
+export function CampoOtp({ etiqueta, valor, onChange, autoFocus }: { etiqueta: string; valor: string; onChange: (v: string) => void; autoFocus?: boolean }) {
+  const LARGO = 6;
+  const casillas = useRef<(HTMLInputElement | null)[]>([]);
+  const digitos = valor.padEnd(LARGO, " ").split("").slice(0, LARGO);
+
+  const poner = (texto: string, desde: number) => {
+    const nuevos = texto.replace(/\D/g, "");
+    if (!nuevos) return;
+    const base = digitos.slice();
+    let i = desde;
+    for (const d of nuevos) {
+      if (i >= LARGO) break;
+      base[i++] = d;
+    }
+    onChange(base.join("").replace(/ /g, "").slice(0, LARGO));
+    casillas.current[Math.min(i, LARGO - 1)]?.focus();
+  };
+
+  const alTeclear = (ev: KeyboardEvent<HTMLInputElement>, i: number) => {
+    if (ev.key === "Backspace") {
+      ev.preventDefault();
+      const base = digitos.slice();
+      if (base[i] !== " ") base[i] = " ";
+      else if (i > 0) {
+        base[i - 1] = " ";
+        casillas.current[i - 1]?.focus();
+      }
+      onChange(base.join("").trimEnd());
+    } else if (ev.key === "ArrowLeft" && i > 0) casillas.current[i - 1]?.focus();
+    else if (ev.key === "ArrowRight" && i < LARGO - 1) casillas.current[i + 1]?.focus();
+  };
+
+  return (
+    <div className="campo" role="group" aria-label={etiqueta}>
+      <span>{etiqueta}</span>
+      <div className="otp">
+        {digitos.map((d, i) => (
+          <input
+            key={i}
+            ref={(el) => { casillas.current[i] = el; }}
+            className="otp-casilla"
+            inputMode="numeric"
+            autoComplete={i === 0 ? "one-time-code" : "off"}
+            aria-label={`Dígito ${i + 1} de ${LARGO}`}
+            value={d.trim()}
+            autoFocus={autoFocus && i === 0}
+            onChange={(e) => poner(e.target.value.slice(-LARGO), i)}
+            onPaste={(e) => { e.preventDefault(); poner(e.clipboardData.getData("text"), i); }}
+            onKeyDown={(e) => alTeclear(e, i)}
+            onFocus={(e) => e.target.select()}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

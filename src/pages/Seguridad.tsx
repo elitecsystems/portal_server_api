@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { api, textoError, type Estado2fa } from "../api";
 import { useAuth } from "../auth";
 import { useStepUp } from "../stepup";
-import { Campo, Cargando, Errores, Exito, useCarga } from "../components/ui";
+import { Campo, CampoOtp, Cargando, Errores, Exito, useCarga } from "../components/ui";
 
 export function Seguridad() {
   const aviso = (useLocation().state as { aviso?: string } | null)?.aviso ?? null;
@@ -83,6 +83,7 @@ function Configurar2fa({ alTerminar }: { alTerminar: (codigos: string[]) => void
 
   const confirmar = async (ev: FormEvent) => {
     ev.preventDefault();
+    if (codigo.length !== 6) return setError("Escribe los 6 dígitos del código OTP.");
     setEnviando(true);
     setError(null);
     try {
@@ -115,9 +116,7 @@ function Configurar2fa({ alTerminar }: { alTerminar: (codigos: string[]) => void
           {qr && <img className="qr" src={qr} width={220} height={220} alt="Código QR para tu aplicación de verificación" />}
           <p className="suave">¿No puedes escanear? Escribe esta clave a mano: <code>{inicio.secreto}</code></p>
           <p>2. Escribe el código de 6 dígitos que muestra la aplicación:</p>
-          <Campo etiqueta="Código">
-            <input inputMode="numeric" autoComplete="one-time-code" maxLength={6} minLength={6} value={codigo} onChange={(e) => setCodigo(e.target.value)} required />
-          </Campo>
+          <CampoOtp etiqueta="Código OTP de 6 dígitos" valor={codigo} onChange={setCodigo} />
           <button disabled={enviando}>Activar</button>
         </form>
       )}

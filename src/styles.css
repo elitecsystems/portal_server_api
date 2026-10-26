@@ -119,6 +119,9 @@ input, select, textarea {
   border: 1px solid var(--borde); border-radius: var(--radio-chico); padding: 8px 12px;
 }
 textarea { min-height: 110px; resize: vertical; }
+.otp { display: flex; gap: 8px; }
+input.otp-casilla { flex: 1; min-width: 0; padding: 10px 0; text-align: center; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+button.enlace { background: none; border: 0; padding: 0; color: var(--marca); text-decoration: underline; cursor: pointer; font-size: 13px; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--marca); box-shadow: 0 0 3px var(--marca-suave); }
 input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
   outline: 2px solid var(--marca); outline-offset: 2px;

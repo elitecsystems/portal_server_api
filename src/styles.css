@@ -129,6 +129,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 .grupo-checks { display: grid; gap: 6px; }
 .check { display: flex; gap: 8px; align-items: center; }
 .check input { width: auto; }
+.sistema-detalle { margin: 6px 0 10px 26px; padding-left: 12px; border-left: 2px solid var(--borde); }
+.sistema-detalle .campo { margin: 8px 0 0; }
 button, .boton {
   font: inherit; cursor: pointer; text-decoration: none; display: inline-block; text-align: center;
   background: var(--marca); color: var(--tarjeta); border: 1px solid transparent; border-radius: 999px; padding: 8px 18px;

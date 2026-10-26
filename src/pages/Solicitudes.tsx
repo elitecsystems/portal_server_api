@@ -1,8 +1,26 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, ApiError, textoError, type Condominio, type Solicitud, type TipoServicio } from "../api";
+import { api, ApiError, textoError, type Condominio, type Modalidad, type Sistema, type Solicitud } from "../api";
 import { fechaHora } from "../format";
 import { Campo, Cargando, Errores, Insignia, Vacio, useCarga } from "../components/ui";
+
+// El tope de la API para la descripcion que se corrige al contestar una revision.
+const MAX_DESCRIPCION = 6000;
+
+const ETIQUETA_MODALIDAD: Record<Modalidad, string> = { correctivo: "Correctivo", preventivo: "Preventivo" };
+
+// La pregunta abierta cambia con la modalidad: algo falla, o se quiere prevenir.
+const PREGUNTA_DETALLE: Record<Modalidad, { etiqueta: string; ayuda: string }> = {
+  correctivo: { etiqueta: "¿Qué falla?", ayuda: "Cuéntanos qué está fallando y dónde dentro del condominio." },
+  preventivo: { etiqueta: "¿Qué tipo de prevención requiere?", ayuda: "Por ejemplo: revisión general, limpieza, lubricación o ajuste." },
+};
+
+/** Los sistemas de una solicitud ("CCTV (correctivo), Portones (preventivo)"). Las anteriores a
+ *  los sistemas no los tienen: se muestran con los tipos de servicio que se marcaron. */
+function resumenSistemas(s: Solicitud): string {
+  if (s.sistemas.length > 0) return s.sistemas.map((x) => `${x.nombre} (${ETIQUETA_MODALIDAD[x.modalidad].toLowerCase()})`).join(", ");
+  return s.tipos_servicio.map((t) => t.nombre).join(", ");
+}
 
 export function EstadoSolicitud({ s }: { s: Solicitud["estado"] }) {
   if (s === "pendiente") return <Insignia tono="azul">Recibida</Insignia>;
@@ -29,7 +47,7 @@ export function ListaSolicitudes() {
               <strong>{s.condominio_nombre}</strong>
               <EstadoSolicitud s={s.estado} />
             </div>
-            <p className="suave" style={{ margin: "4px 0" }}>{s.tipos_servicio.map((t) => t.nombre).join(", ")} · {fechaHora(s.created_at)}</p>
+            <p className="suave" style={{ margin: "4px 0" }}>{resumenSistemas(s)} · {fechaHora(s.created_at)}</p>
             <p style={{ margin: 0 }}>{s.servicio_solicitado.length > 140 ? s.servicio_solicitado.slice(0, 140) + "…" : s.servicio_solicitado}</p>
           </article>
         </Link>
@@ -68,7 +86,7 @@ function ResponderRevision({ s, alResponder }: { s: Solicitud; alResponder: (nue
         <textarea value={respuesta} onChange={(e) => setRespuesta(e.target.value)} required maxLength={2000} />
       </Campo>
       <Campo etiqueta="Descripción de lo que necesitas" ayuda="Si hace falta, corrígela o complétala. Lo que habías escrito queda guardado.">
-        <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required maxLength={2000} />
+        <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} required maxLength={MAX_DESCRIPCION} />
       </Campo>
       <div className="acciones">
         <button disabled={enviando}>{enviando ? "Enviando…" : "Enviar respuesta"}</button>
@@ -112,7 +130,7 @@ export function DetalleSolicitud() {
             </div>
           )}
           <dl className="datos" style={{ marginTop: 12 }}>
-            <dt>Servicios</dt><dd>{s.tipos_servicio.map((t) => t.nombre).join(", ")}</dd>
+            <dt>{s.sistemas.length > 0 ? "Sistemas" : "Servicios"}</dt><dd>{resumenSistemas(s)}</dd>
             <dt>Descripción</dt><dd style={{ whiteSpace: "pre-wrap" }}>{s.servicio_solicitado}</dd>
             <dt>Quién reporta</dt><dd>{s.quien_reporta || "—"}</dd>
             <dt>Teléfono</dt><dd>{s.telefono_reporta || "—"}</dd>
@@ -129,13 +147,13 @@ export function DetalleSolicitud() {
 export function NuevaSolicitud() {
   const nav = useNavigate();
   const condos = useCarga(() => api.get<Condominio[]>("/condominios"), []);
-  const tipos = useCarga(() => api.get<TipoServicio[]>("/tipos-servicio"), []);
+  const sistemas = useCarga(() => api.get<Sistema[]>("/sistemas"), []);
   // El id lo genera el front: si el envio se repite (red inestable), la API
   // reconoce la misma solicitud y no la duplica.
   const [id] = useState(() => crypto.randomUUID());
   const [condominio, setCondominio] = useState("");
-  const [seleccion, setSeleccion] = useState<number[]>([]);
-  const [texto, setTexto] = useState("");
+  // Por cada sistema marcado: su modalidad y la respuesta abierta (que falla / que prevencion).
+  const [seleccion, setSeleccion] = useState<Record<number, { modalidad: Modalidad | ""; detalle: string }>>({});
   const [quien, setQuien] = useState("");
   const [telefono, setTelefono] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -147,12 +165,25 @@ export function NuevaSolicitud() {
   // Un condominio sin sus datos completos no puede pedir (decisiones/0105): se avisa
   // antes de que llene el formulario. El servidor lo vuelve a exigir.
   const elegidoIncompleto = condos.datos?.find((c) => String(c.id) === elegido && !c.perfil_completo) ?? null;
-  const alternar = (t: number) => setSeleccion((s) => (s.includes(t) ? s.filter((x) => x !== t) : [...s, t]));
+  const alternar = (id: number) =>
+    setSeleccion((previa) => {
+      if (id in previa) {
+        const { [id]: _quitado, ...resto } = previa;
+        return resto;
+      }
+      return { ...previa, [id]: { modalidad: "", detalle: "" } };
+    });
+  const cambiar = (id: number, cambio: Partial<{ modalidad: Modalidad; detalle: string }>) =>
+    setSeleccion((previa) => ({ ...previa, [id]: { ...previa[id], ...cambio } }));
 
   const enviar = async (ev: FormEvent) => {
     ev.preventDefault();
     if (!elegido) return setError("Elige el condominio.");
-    if (seleccion.length === 0) return setError("Marca al menos un tipo de servicio.");
+    // En el orden del catalogo, no en el que se fueron marcando.
+    const pedidos = (sistemas.datos ?? []).filter((x) => x.id in seleccion);
+    if (pedidos.length === 0) return setError("Marca al menos un sistema.");
+    const sinModalidad = pedidos.find((x) => !seleccion[x.id].modalidad);
+    if (sinModalidad) return setError(`Indica si lo de ${sinModalidad.nombre} es correctivo o preventivo.`);
     setEnviando(true);
     setError(null);
     setBloqueo(null);
@@ -161,8 +192,11 @@ export function NuevaSolicitud() {
       await api.post("/solicitudes", {
         id,
         condominio_id: Number(elegido),
-        tipos_servicio_id: seleccion,
-        servicio_solicitado: texto,
+        sistemas: pedidos.map((x) => ({
+          sistema_id: x.id,
+          modalidad: seleccion[x.id].modalidad,
+          detalle: seleccion[x.id].detalle,
+        })),
         quien_reporta: quien.trim() || undefined,
         telefono_reporta: telefono.trim() || undefined,
       });
@@ -180,7 +214,7 @@ export function NuevaSolicitud() {
     <>
       <p><Link to="/solicitudes">← Mis solicitudes</Link></p>
       <h1>Nueva solicitud</h1>
-      <Cargando error={condos.error || tipos.error} cargando={condos.cargando || tipos.cargando} />
+      <Cargando error={condos.error || sistemas.error} cargando={condos.cargando || sistemas.cargando} />
       {(incompleto || elegidoIncompleto) && (
         <div className="aviso ambar" role="alert">
           <strong>Antes de pedir un servicio, completa los datos de tu condominio.</strong> Necesitamos la dirección, el pin en el mapa,
@@ -193,7 +227,7 @@ export function NuevaSolicitud() {
           <strong>No podemos recibir una solicitud nueva por ahora.</strong> {bloqueo} Comunícate con la empresa para regularizar tu saldo.
         </div>
       )}
-      {condos.datos && tipos.datos && (
+      {condos.datos && sistemas.datos && (
         <form className="tarjeta" onSubmit={enviar}>
           <Errores mensaje={error} />
           <Campo etiqueta="Condominio">
@@ -203,18 +237,43 @@ export function NuevaSolicitud() {
             </select>
           </Campo>
           <fieldset style={{ border: 0, padding: 0, margin: "0 0 14px" }}>
-            <legend style={{ fontSize: ".9rem", fontWeight: 500, marginBottom: 4 }}>Tipo de servicio</legend>
+            <legend style={{ fontSize: ".9rem", fontWeight: 500, marginBottom: 4 }}>¿Qué sistema requiere servicio?</legend>
             <div className="grupo-checks">
-              {tipos.datos.map((t) => (
-                <label key={t.id} className="check">
-                  <input type="checkbox" checked={seleccion.includes(t.id)} onChange={() => alternar(t.id)} /> {t.nombre}
-                </label>
-              ))}
+              {sistemas.datos.map((x) => {
+                const elegido = seleccion[x.id];
+                return (
+                  <div key={x.id}>
+                    <label className="check">
+                      <input type="checkbox" checked={!!elegido} onChange={() => alternar(x.id)} /> {x.nombre}
+                    </label>
+                    {elegido && (
+                      <div className="sistema-detalle">
+                        <div className="grupo-checks" role="radiogroup" aria-label={`Tipo de servicio para ${x.nombre}`}>
+                          {(["correctivo", "preventivo"] as const).map((m) => (
+                            <label key={m} className="check">
+                              <input
+                                type="radio"
+                                name={`modalidad-${x.id}`}
+                                checked={elegido.modalidad === m}
+                                onChange={() => cambiar(x.id, { modalidad: m })}
+                                required
+                              />{" "}
+                              {ETIQUETA_MODALIDAD[m]}
+                            </label>
+                          ))}
+                        </div>
+                        {elegido.modalidad && (
+                          <Campo etiqueta={PREGUNTA_DETALLE[elegido.modalidad].etiqueta} ayuda={PREGUNTA_DETALLE[elegido.modalidad].ayuda}>
+                            <textarea value={elegido.detalle} onChange={(e) => cambiar(x.id, { detalle: e.target.value })} required maxLength={500} />
+                          </Campo>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </fieldset>
-          <Campo etiqueta="¿Qué necesitas?" ayuda="Describe el problema o el trabajo, y dónde dentro del condominio.">
-            <textarea value={texto} onChange={(e) => setTexto(e.target.value)} required maxLength={2000} />
-          </Campo>
           <Campo etiqueta="Quién reporta" ayuda="Si lo dejas vacío usamos el nombre de tu cuenta.">
             <input value={quien} onChange={(e) => setQuien(e.target.value)} maxLength={200} />
           </Campo>

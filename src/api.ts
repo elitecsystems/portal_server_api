@@ -112,10 +112,16 @@ export type DatosFiscales = {
 export type ItemCatalogo = { codigo: string; nombre: string };
 export type CatalogosFiscales = { regimenes_fiscales: ItemCatalogo[]; usos_cfdi: ItemCatalogo[] };
 export type TipoServicio = { id: number; nombre: string };
+export type Sistema = { id: number; nombre: string };
+export type Modalidad = "correctivo" | "preventivo";
+export type SolicitudSistema = { sistema_id: number; nombre: string; modalidad: Modalidad; detalle: string };
 export type Solicitud = {
   id: string;
   condominio_id: number;
   condominio_nombre: string;
+  // Lo que se pide por sistema. Las solicitudes anteriores a los sistemas traen la lista
+  // vacia y conservan sus tipos de servicio.
+  sistemas: SolicitudSistema[];
   tipos_servicio: TipoServicio[];
   servicio_solicitado: string;
   quien_reporta: string | null;

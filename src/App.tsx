@@ -7,6 +7,7 @@ import { Completar } from "./pages/Completar";
 import { CondominioDetalle, Inicio } from "./pages/Condominios";
 import { DetallePedido, ListaPedidos } from "./pages/Pedidos";
 import { Seguridad } from "./pages/Seguridad";
+import { WhatsApp } from "./pages/WhatsApp";
 import { DetalleSolicitud, ListaSolicitudes, NuevaSolicitud } from "./pages/Solicitudes";
 
 function Protegida() {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="solicitudes/:id" element={<DetalleSolicitud />} />
             <Route path="pedidos" element={<ListaPedidos />} />
             <Route path="pedidos/:numero" element={<DetallePedido />} />
+            <Route path="whatsapp" element={<WhatsApp />} />
             <Route path="seguridad" element={<Seguridad />} />
           </Route>
         </Route>

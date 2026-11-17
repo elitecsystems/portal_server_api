@@ -151,7 +151,14 @@ function FacturaCard({ p, alCambiar }: { p: PedidoDetalle; alCambiar: () => void
               <span>{s.tipo_servicio_nombre} <span className="suave">· {fecha(s.cerrado_at)}</span></span>
               {s.factura ? (
                 s.factura.emitida
-                  ? <Insignia tono="verde">Factura emitida</Insignia>
+                  ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+                      <Insignia tono="verde">Factura emitida</Insignia>
+                      {/* El CFDI timbrado: la API lo sirve del acceso vigente de la cuenta al condominio. */}
+                      <a href={`/portal/pedidos/${p.numero_pedido}/servicios/${s.numero_orden}/factura/pdf`} download>Descargar PDF</a>
+                      <a href={`/portal/pedidos/${p.numero_pedido}/servicios/${s.numero_orden}/factura/xml`} download>Descargar XML</a>
+                    </span>
+                  )
                   : <Insignia tono="azul">Factura solicitada el {fecha(s.factura.solicitada_en)}</Insignia>
               ) : abierto === s.numero_orden ? null : (
                 <button className="secundario" onClick={() => abrir(s)} disabled={tieneFiscales === undefined || sinFiscales}>

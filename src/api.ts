@@ -70,6 +70,8 @@ export const api = {
   get: <T>(r: string) => pedir<T>("GET", r),
   post: <T>(r: string, b?: unknown) => pedir<T>("POST", r, b ?? {}),
   patch: <T>(r: string, b: unknown) => pedir<T>("PATCH", r, b),
+  put: <T>(r: string, b: unknown) => pedir<T>("PUT", r, b),
+  delete: <T>(r: string) => pedir<T>("DELETE", r),
 };
 
 export const textoError = (e: unknown) => (e instanceof ApiError ? e.message : "Ocurrió un error inesperado.");
@@ -177,3 +179,30 @@ export type Saldo = {
     saldo: string;
   }[];
 };
+
+// ---- WhatsApp (app/portal_whatsapp.py) -----------------------------------------
+export type WhatsAppNumero = { id: number; telefono: string; vinculado_at: string };
+// El codigo se ve una sola vez; `wa_link` abre WhatsApp con el mensaje ya escrito (se dibuja como QR).
+export type WhatsAppCodigo = { codigo: string; wa_link: string; expira_at: string };
+export type WhatsAppAvisos = {
+  condominio_id: number;
+  condominio_nombre: string;
+  mis_solicitudes: boolean;
+  otras_solicitudes: boolean;
+  servicio_cerrado: boolean;
+};
+
+/** Un correo adicional del condominio y a qué le llega (decisión de la Fase 6). */
+export interface CorreoAdicional {
+  id: number;
+  correo: string;
+  recibe_recibos: boolean;
+  recibe_facturas: boolean;
+}
+
+/** Los dos correos principales (de recibos y de facturas) y los adicionales. */
+export interface CorreosCondominio {
+  principal_recibos: string | null;
+  principal_facturas: string | null;
+  adicionales: CorreoAdicional[];
+}

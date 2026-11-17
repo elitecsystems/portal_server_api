@@ -16,6 +16,7 @@ export function Layout() {
             <NavLink to="/" end className={({ isActive }) => (isActive ? "activo" : "")}>Inicio</NavLink>
             <NavLink to="/solicitudes" className={({ isActive }) => (isActive ? "activo" : "")}>Solicitudes</NavLink>
             <NavLink to="/pedidos" className={({ isActive }) => (isActive ? "activo" : "")}>Pedidos</NavLink>
+            <NavLink to="/whatsapp" className={({ isActive }) => (isActive ? "activo" : "")}>WhatsApp</NavLink>
             <NavLink to="/seguridad" className={({ isActive }) => (isActive ? "activo" : "")}>Seguridad</NavLink>
           </nav>
           )}

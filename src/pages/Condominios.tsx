@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, textoError, type CatalogosFiscales, type Condominio, type DatosFiscales, type ItemCatalogo } from "../api";
+import { api, textoError, type CatalogosFiscales, type Condominio, type CorreosCondominio, type DatosFiscales, type ItemCatalogo } from "../api";
 // import { dinero, fecha } from "../format";   // solo los usa SaldoCard (comentada)
 import { useStepUp } from "../stepup";
 import { Campo, Cargando, Errores, Exito, Info, Insignia, Vacio, useCarga } from "../components/ui";
@@ -66,6 +66,7 @@ export function CondominioDetalle() {
           <DatosCard c={datos} />
           <CorreoContacto c={datos} />
           <FiscalesCard c={datos} />
+          <CorreosCard c={datos} />
         </>
       )}
     </>
@@ -313,6 +314,105 @@ function FiscalesCard({ c }: { c: Condominio }) {
             <button>Guardar</button>
           </div>
         </form>
+      )}
+    </section>
+  );
+}
+
+/** Los correos del condominio y a qué le llega cada uno: recibos (resumen, estado de cuenta, QR), facturas (factura y
+ *  complementos de pago) o ambos. Ver la lista no pide nada; agregar, cambiar o quitar uno pide el código de verificación
+ *  en dos pasos, porque recibirá recibos y facturas. El correo de contacto y el de facturación son los principales y
+ *  se cambian en su propio lugar. */
+function CorreosCard({ c }: { c: Condominio }) {
+  const stepUp = useStepUp();
+  const { datos, cargando, poner, error } = useCarga(() => api.get<CorreosCondominio>(`/condominios/${c.id}/correos`), [c.id]);
+  const [correo, setCorreo] = useState("");
+  const [recibos, setRecibos] = useState(true);
+  const [facturas, setFacturas] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [ok, setOk] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+
+  // Toda escritura pasa por aquí: pide el código si hace falta y deja la lista como la contestó el servidor.
+  const aplicar = async (accion: () => Promise<CorreosCondominio>, exito: string) => {
+    setErr(null);
+    setOk(null);
+    setOcupado(true);
+    try {
+      poner(await stepUp(accion));
+      setOk(exito);
+      return true;
+    } catch (e) {
+      setErr(textoError(e));
+      return false;
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const agregar = async (ev: FormEvent) => {
+    ev.preventDefault();
+    if (!recibos && !facturas) {
+      setErr("El correo tiene que recibir algo: recibos, facturas o ambos.");
+      return;
+    }
+    const hecho = await aplicar(
+      () => api.post<CorreosCondominio>(`/condominios/${c.id}/correos`, { correo: correo.trim(), recibe_recibos: recibos, recibe_facturas: facturas }),
+      "Correo agregado.",
+    );
+    if (hecho) setCorreo("");
+  };
+
+  return (
+    <section className="tarjeta">
+      <h2>Correos del condominio</h2>
+      <p className="suave" style={{ marginTop: 0 }}>
+        Agrega los correos que también deben recibir los recibos y las facturas. Para agregar, cambiar o quitar uno te pediremos tu código de verificación.
+      </p>
+      <Cargando error={error} cargando={cargando} />
+      <Exito mensaje={ok} />
+      <Errores mensaje={err} />
+      {datos && (
+        <>
+          <dl className="datos">
+            <dt>Recibos (correo de contacto)</dt><dd>{datos.principal_recibos ?? "Sin correo"}</dd>
+            <dt>Facturas (correo de facturación)</dt><dd>{datos.principal_facturas ?? "Sin datos fiscales"}</dd>
+          </dl>
+          {datos.adicionales.length === 0 && <p className="suave">Sin correos adicionales.</p>}
+          <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+            {datos.adicionales.map((a) => (
+              <li key={a.id} className="fila" style={{ padding: "8px 0", borderTop: "1px solid var(--borde)", gap: 12, flexWrap: "wrap" }}>
+                <strong>{a.correo}</strong>
+                <label>
+                  <input type="checkbox" checked={a.recibe_recibos} disabled={ocupado}
+                    onChange={(e) => aplicar(() => api.patch<CorreosCondominio>(`/condominios/${c.id}/correos/${a.id}`, { recibe_recibos: e.target.checked }), "Cambio guardado.")} />
+                  {" "}Recibos
+                </label>
+                <label>
+                  <input type="checkbox" checked={a.recibe_facturas} disabled={ocupado}
+                    onChange={(e) => aplicar(() => api.patch<CorreosCondominio>(`/condominios/${c.id}/correos/${a.id}`, { recibe_facturas: e.target.checked }), "Cambio guardado.")} />
+                  {" "}Facturas
+                </label>
+                <button type="button" className="secundario" disabled={ocupado}
+                  onClick={() => aplicar(() => api.delete<CorreosCondominio>(`/condominios/${c.id}/correos/${a.id}`), "Correo quitado.")}>
+                  Quitar
+                </button>
+              </li>
+            ))}
+          </ul>
+          <form onSubmit={agregar} style={{ marginTop: 12 }}>
+            <Campo etiqueta="Correo adicional">
+              <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} required maxLength={254} />
+            </Campo>
+            <div className="fila" style={{ gap: 16, justifyContent: "flex-start" }}>
+              <label><input type="checkbox" checked={recibos} onChange={(e) => setRecibos(e.target.checked)} /> Recibos</label>
+              <label><input type="checkbox" checked={facturas} onChange={(e) => setFacturas(e.target.checked)} /> Facturas</label>
+            </div>
+            <div className="acciones">
+              <button disabled={ocupado || correo.trim() === ""}>{ocupado ? "Guardando…" : "Agregar correo"}</button>
+            </div>
+          </form>
+        </>
       )}
     </section>
   );

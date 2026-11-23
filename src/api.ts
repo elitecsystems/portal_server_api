@@ -206,3 +206,6 @@ export interface CorreosCondominio {
   principal_facturas: string | null;
   adicionales: CorreoAdicional[];
 }
+
+/** Estado de la solicitud de alta de una cuenta que se registro sola (GET /portal/alta). 404 si nacio por invitacion. */
+export type AltaPortal = { estado: "pendiente" | "aprobada" | "rechazada"; motivo_rechazo: string | null; created_at: string };

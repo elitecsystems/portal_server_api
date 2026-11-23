@@ -3,6 +3,7 @@ import { useAuth } from "./auth";
 import { Layout } from "./components/Layout";
 import { StepUpProvider } from "./stepup";
 import { EnlaceCorreo, Invitacion, Login, Olvide, Restablecer } from "./pages/Acceso";
+import { Registro } from "./pages/Registro";
 import { Completar } from "./pages/Completar";
 import { CondominioDetalle, Inicio } from "./pages/Condominios";
 import { DetallePedido, ListaPedidos } from "./pages/Pedidos";
@@ -32,6 +33,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/olvide" element={<Olvide />} />
         <Route path="/invitacion" element={<Invitacion />} />
+        <Route path="/registro" element={<Registro />} />
         <Route path="/restablecer" element={<Restablecer />} />
         <Route path="/verificar-correo" element={<EnlaceCorreo tipo="verificar-correo" />} />
         <Route path="/confirmar-correo-contacto" element={<EnlaceCorreo tipo="confirmar-correo-contacto" />} />

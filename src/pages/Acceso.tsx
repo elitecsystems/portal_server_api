@@ -51,14 +51,14 @@ export function Login() {
         <button disabled={enviando} style={{ width: "100%" }}>{enviando ? "Entrando…" : "Entrar"}</button>
       </form>
       <p style={{ marginTop: 16 }}><Link to="/olvide">Olvidé mi contraseña</Link></p>
-      <p className="suave">¿Todavía no tienes cuenta? Tu cuenta la da de alta la empresa y recibirás una invitación por correo.</p>
+      <p className="suave">¿Todavía no tienes cuenta? <Link to="/registro">Crea tu cuenta</Link>. Si la empresa te mandó una invitación, ábrela desde el enlace del mensaje.</p>
     </Publico>
   );
 }
 
 /** El correo de verificacion no llego o se perdio: pedir otro (pide las credenciales
  *  para que nadie pueda mandar correos a un correo ajeno). */
-function ReenviarVerificacion({ correo, password }: { correo: string; password: string }) {
+export function ReenviarVerificacion({ correo, password }: { correo: string; password: string }) {
   const [estado, setEstado] = useState<"listo" | "enviando" | "enviado">("listo");
   const [error, setError] = useState<string | null>(null);
 

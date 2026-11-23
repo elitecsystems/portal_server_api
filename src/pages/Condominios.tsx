@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, textoError, type CatalogosFiscales, type Condominio, type CorreosCondominio, type DatosFiscales, type ItemCatalogo } from "../api";
+import { api, ApiError, textoError, type AltaPortal, type CatalogosFiscales, type Condominio, type CorreosCondominio, type DatosFiscales, type ItemCatalogo } from "../api";
 // import { dinero, fecha } from "../format";   // solo los usa SaldoCard (comentada)
 import { useStepUp } from "../stepup";
 import { Campo, Cargando, Errores, Exito, Info, Insignia, Vacio, useCarga } from "../components/ui";
@@ -30,10 +30,10 @@ export function Inicio() {
     <>
       <div className="fila">
         <h1>Mis condominios</h1>
-        <Link className="boton" to="/solicitudes/nueva">Pedir un servicio</Link>
+        {(datos?.length ?? 0) > 0 && <Link className="boton" to="/solicitudes/nueva">Pedir un servicio</Link>}
       </div>
       <Cargando error={error} cargando={cargando} />
-      {datos && datos.length === 0 && <Vacio>Tu cuenta todavía no tiene condominios asociados. Contacta a la empresa.</Vacio>}
+      {datos && datos.length === 0 && <SinCondominios />}
       <div className="rejilla">
         {datos?.map((c) => (
           <Link key={c.id} to={`/condominios/${c.id}`} style={{ textDecoration: "none", color: "inherit" }}>
@@ -47,6 +47,25 @@ export function Inicio() {
       </div>
     </>
   );
+}
+
+/** Una cuenta sin condominios es o una que se registro sola (su solicitud de alta esta en revision; si se rechaza, la cuenta se desactiva y ya no entra) o
+ *  una que nacio por invitacion y aun no tiene acceso. El portal nunca dice a cual condominio se parece su solicitud. */
+function SinCondominios() {
+  const alta = useCarga(
+    () => api.get<AltaPortal>("/alta").catch((e) => (e instanceof ApiError && e.status === 404 ? null : Promise.reject(e))),
+    [],
+  );
+  if (alta.cargando) return <p className="vacio">Cargando…</p>;
+  if (alta.datos?.estado === "pendiente") {
+    return (
+      <Vacio>
+        Tu solicitud de alta está en revisión. Una persona de Elitec la revisa y puede llamarte o escribirte al teléfono que
+        dejaste. Cuando te den acceso, tu condominio aparecerá aquí.
+      </Vacio>
+    );
+  }
+  return <Vacio>Tu cuenta todavía no tiene condominios asociados. Contacta a la empresa.</Vacio>;
 }
 
 export function CondominioDetalle() {
